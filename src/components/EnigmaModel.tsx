@@ -63,10 +63,13 @@ export const EnigmaModel: React.FC = () => {
                 <Keyboard3D />
             </group>
 
-            {/* Plugboard Removed as requested */}
-            {/* <group position={[0, -1.2, 4.8]} rotation={[-0.2, 0, 0]}>
-                 <Plugboard3D />
-            </group> */}
+            {/* Plugboard Group - Positioned on the front vertical face */}
+            {/* The base chassis is 2 units high, centered at Y=-1.1. Top is -0.1, Bottom is -2.1.
+                Front face is at Z = 4 (Since depth is 8, centered at 0).
+                Let's place it at Y=-0.8 (middle of the front face), Z=4.02 (just outside the wood). */}
+            <group position={[0, -0.8, 4.02]} rotation={[0, 0, 0]}>
+                <Plugboard3D />
+            </group>
 
             {/* Rotor Assembly Group */}
             {/* Metal Faceplate Pos: [0, 0.15, -1.5]

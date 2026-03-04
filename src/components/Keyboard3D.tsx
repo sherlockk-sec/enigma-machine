@@ -107,7 +107,17 @@ export const Keyboard3D: React.FC = () => {
 
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
+            // Ignore if Ctrl, Alt, or Meta (Command) are pressed to allow copy-pasting
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
+
             const key = e.key.toUpperCase();
+
+            // Handle Backspace directly
+            if (key === "BACKSPACE" || key === "DELETE") {
+                useEnigmaStore.getState().backspace();
+                return;
+            }
+
             if (ALPHABET.includes(key)) {
                 handlePress(key);
             }
@@ -115,7 +125,7 @@ export const Keyboard3D: React.FC = () => {
 
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
-    }, []);
+    }, [pressedKey]);
 
     // Render Rows
     const renderRow = (keys: string[], rowIndex: number, offsetZ: number, offsetX: number) => {

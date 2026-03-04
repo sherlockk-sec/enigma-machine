@@ -9,12 +9,15 @@ interface EnigmaState {
     outputHistory: string;
     lastSignalPath: SignalPath | null;
     explodedView: boolean;
+    plugboardVersion: number;
 
     // Actions
     pressKey: (char: string) => void;
+    backspace: () => void;
     setRotorPosition: (index: 0 | 1 | 2, char: string) => void;
     rotateRotor: (index: 0 | 1 | 2, direction: 1 | -1) => void;
     addPlug: (char1: string, char2: string) => void;
+    removePlug: (char: string) => void;
     clearPlugs: () => void;
     toggleExplodedView: () => void;
     reset: () => void;
@@ -37,6 +40,7 @@ export const useEnigmaStore = create<EnigmaState>((set, get) => {
         outputHistory: "",
         lastSignalPath: null,
         explodedView: false,
+        plugboardVersion: 0,
 
         pressKey: (char: string) => {
             const { machine, inputHistory, outputHistory } = get();
@@ -51,6 +55,15 @@ export const useEnigmaStore = create<EnigmaState>((set, get) => {
                 inputHistory: inputHistory + char.toUpperCase(),
                 outputHistory: outputHistory + signal.output,
                 lastSignalPath: signal
+            });
+        },
+
+        backspace: () => {
+            const { inputHistory, outputHistory } = get();
+            if (inputHistory.length === 0) return;
+            set({
+                inputHistory: inputHistory.slice(0, -1),
+                outputHistory: outputHistory.slice(0, -1)
             });
         },
 
@@ -84,19 +97,36 @@ export const useEnigmaStore = create<EnigmaState>((set, get) => {
         },
 
         addPlug: (char1, char2) => {
-            const { machine } = get();
+            const { machine, plugboardVersion } = get();
             try {
                 machine.plugboard.addConnection(char1, char2);
-                set({}); // Force re-render
+                set({ machine, plugboardVersion: plugboardVersion + 1 });
             } catch (e) {
                 console.warn(e);
             }
         },
 
-        clearPlugs: () => {
+        removePlug: (char) => {
             const { machine } = get();
+
+            // Clone the entries so they survive the clear()
+            const oldEntries = Array.from((machine.plugboard as any).connections.entries() as Iterable<[string, string]>);
             machine.plugboard.clear();
-            set({});
+
+            oldEntries.forEach(([key, val]) => {
+                if (key !== char && val !== char && !(machine.plugboard as any).connections.has(key)) {
+                    machine.plugboard.addConnection(key, val);
+                }
+            });
+
+            // Force React re-render by destructing and spreading state, or triggering shallow
+            set({ machine, plugboardVersion: get().plugboardVersion + 1 });
+        },
+
+        clearPlugs: () => {
+            const { machine, plugboardVersion } = get();
+            machine.plugboard.clear();
+            set({ machine, plugboardVersion: plugboardVersion + 1 });
         },
 
         toggleExplodedView: () => set((state) => ({ explodedView: !state.explodedView })),
@@ -112,7 +142,8 @@ export const useEnigmaStore = create<EnigmaState>((set, get) => {
                 ],
                 inputHistory: "",
                 outputHistory: "",
-                lastSignalPath: null
+                lastSignalPath: null,
+                plugboardVersion: 0
             });
         }
     };
